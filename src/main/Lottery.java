@@ -1,18 +1,11 @@
-/**
- * 
- */
 package main;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
 /**
- * A class meant to simulate a lottery and announce a winner
+ * A lottery with a configurable range, containing methods to add tickets and draw results
  * @author Alessandro Cavicchioli
  * @version 1.0
  */
@@ -20,7 +13,7 @@ public class Lottery
 {
 	private final Random random = new Random();
 	private final int lotteryMax;
-	private List<LotteryTicket> lotteryTickets = new ArrayList<LotteryTicket>(); 
+	private Set<LotteryTicket> lotteryTickets = new HashSet<LotteryTicket>(); 
 	
 	/**
 	 * Initialises a new lottery, which will generate numbers within 0 and the specified value (both inclusive)
@@ -32,7 +25,7 @@ public class Lottery
 	}
 	
 	/**
-	 * Returns the intersection between the two specified sets
+	 * Helper method that returns the intersection between the two specified sets
 	 * @param set1 the first set
 	 * @param set2 the second set
 	 * @return the intersection of {@code set1} and {@code set2}
@@ -48,7 +41,7 @@ public class Lottery
 	 * @param matchingNumbersCount the amount of matching numbers
 	 * @return the prize money (in pounds)
 	 */
-	private static int getPrize(int matchingNumbersCount)
+	private int getPrize(int matchingNumbersCount)
 	{
 		switch(matchingNumbersCount)
 		{
@@ -63,30 +56,6 @@ public class Lottery
 		default:
 			return 0;
 		}
-	}
-	
-	/**
-	 * Adds the winnings in the second map to those in the first map. Note that this is done in place, and
-	 * will modify the map the winnings are added to
-	 * @param totalResults the map to be added to
-	 * @param newResults the map with the winnings to add
-	 * @return the map the winnings were added to
-	 */
-	private static Map<String, Integer> addWinnings(Map<String, Integer> totalResults, Map<String, Integer> newResults)
-	{	
-		for(Map.Entry<String, Integer> pair : newResults.entrySet())
-		{
-			String ownerName = pair.getKey();
-			Integer totalWinnings = totalResults.get(ownerName);
-			Integer newWinnings = pair.getValue();
-			
-			if(!totalResults.containsKey(ownerName)) //This person hasn't played yet
-			{
-				totalResults.put(ownerName, 0); //Therefore they haven't won anything yet
-			}
-			totalResults.put(ownerName, totalWinnings + newWinnings); //Add the new winnings to their old winnings
-		}
-		return totalResults;
 	}
 	
 	/**
@@ -109,20 +78,18 @@ public class Lottery
 	/**
 	 * Runs one draw of the lottery, using the specified set of winning numbers
 	 * @param winningNumbers the set of winning numbers
-	 * @return a map associating the names of the owners of the tickets with the amount of money they won
+	 * @return a lottery result containing the results of this draw
 	 */
-	private Map<String, Integer> drawOnce(Set<Integer> winningNumbers)
+	private LotteryResults drawOnce(Set<Integer> winningNumbers)
 	{
-		Map<String, Integer> results = new HashMap<String, Integer>();
+		LotteryResults results = new LotteryResults();
 		for(LotteryTicket ticket : lotteryTickets)
 		{	
 			int matchingNumberCount = getIntersection(ticket.getNumbers(), winningNumbers).size();
-			results.put(ticket.getOwnerName(), getPrize(matchingNumberCount));
+			results.addResult(ticket.getOwnerName(), getPrize(matchingNumberCount));
 		}
 		return results;
 	}
-	
-	
 	
 	/**
 	 * Adds a ticket to this lottery
@@ -134,21 +101,20 @@ public class Lottery
 	}
 	
 	/**
-	 * Runs the lottery for the specified amount of times, tallies up the results, and returns the results <br>
+	 * Runs the lottery for the specified amount of times, tallies up the results, and returns the total.<br>
 	 * Note that this method does not track ticket count in any way, and will therefore draw the specified amount of times
 	 * for every ticket in this lottery.
 	 * @param times the amount of draws that should be performed
-	 * @return a map associating the names of the owners of the tickets with the amount of money they won
+	 * @return a lottery result containing the total result of all draws
 	 */
-	public Map<String, Integer> draw(int times)
+	public LotteryResults draw(int times)
 	{
-		Map<String, Integer> totalResults = new HashMap<String, Integer>();
+		LotteryResults totalResult = new LotteryResults();
 		for(int i=0; i<times; i++)
 		{
-			Map<String, Integer> tempResults = drawOnce(generateWinningNumbers());
-			addWinnings(totalResults, tempResults);
+			totalResult.accumulateResults(drawOnce(generateWinningNumbers()));
 		}
-		return totalResults;
+		return totalResult;
 	}
 }
 

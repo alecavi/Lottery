@@ -1,9 +1,5 @@
-/**
- * 
- */
 package main;
 
-import java.util.Objects;
 import java.util.Set;
 
 /**
